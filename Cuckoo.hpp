@@ -3,6 +3,7 @@
 #include "HashTable.hpp"
 #include "DynamicArray.hpp"
 #include <functional>
+#include <stdexcept>
 
 
 
@@ -34,7 +35,7 @@ template <typename T, typename C> class CuckooHashTable : public HashTable<T, C>
     public:
         CuckooHashTable(size_t cap = 16);
         CuckooHashTable(const CuckooHashTable& other);
-        ~CuckooHashTable();
+        ~CuckooHashTable() override = default;
         void insert(const T& key, C value) override;
         C remove(const T& key) override;
         C get(const T& key) const override;
@@ -110,4 +111,94 @@ template <typename T, typename C> void CuckooHashTable<T, C>::insert(const T& ke
     }
     
     bool first_table = true;
+
+    for(int i = 0; i < MAX_KICKS; i++){
+        if(first_table){
+            size_t index = hash1(key);
+
+            if (!table1.get(index).has_data){
+                table1.replace(index, new_elem)
+                currentSize++;
+                return;
+            }
+
+            Element temp_elem = table2.get(index);
+            table2.replace(index, new_elem);
+            new_elem = temp_elem;
+            first_table = false;
+        }
+        else{
+            size_t index = hash2(key);
+
+            if (!table2.get(index).has_data){
+                table2.replace(index, new_elem)
+                currentSize++;
+                return;
+            }
+
+            Element temp_elem = table1.get(index);
+            table1.replace(index, new_elem);
+            new_elem = temp_elem;
+            first_table = false;
+        }
+    }
+    rehash();
+    insert(new_elem.key, new_elem.value);
+}
+
+template <typename T, typename C> C CuckooHashTable<T, C>::remove(const T& key){
+    size_t pos = hash1(key);
+
+    if(table1.get(pos).has_data && table1.get(pos).key == key){
+        C value = table1.get(pos).value;
+
+        table1.replace(pos, Element());
+        currentSize--;
+
+        return value;
+    }
+
+    pos = hash2(key);
+
+    if(table2.get(pos).has_data && table2.get(pos).key == key){
+        C value = table2.get(pos).value;
+
+        table2.replace(pos, Element());
+        currentSize--;
+
+        return value;
+    }
+
+    throw std::runtime_error("Key not found");
+}
+
+template <typename T, typename C> void CuckooHashTable<T, C>::get(const T& key) const{
+    size_t pos = hash1(key);
+
+    if(table1.get(pos).has_data && table1.get(pos).key == key){
+        return table1.get(pos).value;
+    }
+
+     pos = hash2(key);
+
+    if(table2.get(pos).has_data && table2.get(pos).key == key){
+        return table2.get(pos).value;
+    }
+
+    throw std::runtime_error("Key not found");
+}
+
+template <typename T, typename C> void CuckooHashTable<T, C>::print() const{
+    std::cout << "T1 {\n";
+    for(int i = 0; i < table1.getSize(); i++){
+        if(table1.get(i).has_data){
+            cout << '"'<< table1.get(i).key << '" : "' << table1.get(i).value << '",\n';
+        }
+    }
+    std::cout << "T2 {\n";
+    for(int i = 0; i < table2.getSize(); i++){
+        if(table2.get(i).has_data){
+            cout << '"'<< table2.get(i).key << '" : "' << table2.get(i).value << '",\n';
+        }
+    }
 }
