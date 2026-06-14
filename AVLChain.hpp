@@ -10,8 +10,15 @@ private:
     
     size_t hash(const T& key) const;
 
-public:
+public:    ChainAVL() : table_size(16), table(nullptr) {
+        table = new AVLTree<T,C>*[table_size];
+        for (size_t i = 0; i < table_size; i++) {
+            table[i] = new AVLTree<T,C>();
+        }
+    }
     ChainAVL(size_t size);
+    ChainAVL(const ChainAVL<T,C>& other);
+    ChainAVL<T,C>& operator=(const ChainAVL<T,C>& other);
     ~ChainAVL();
 
     void insert(const T& key, C value) override;
@@ -27,6 +34,31 @@ ChainAVL<T,C>::ChainAVL(size_t size) {
     for (size_t i = 0; i < table_size; i++) {
         table[i] = new AVLTree<T,C>();
     }
+}
+
+template<typename T, typename C>
+ChainAVL<T,C>::ChainAVL(const ChainAVL<T,C>& other)
+    : table_size(other.table_size), table(new AVLTree<T,C>*[other.table_size]) {
+    for (size_t i = 0; i < table_size; i++) {
+        table[i] = new AVLTree<T,C>(*other.table[i]);
+    }
+}
+
+template<typename T, typename C>
+ChainAVL<T,C>& ChainAVL<T,C>::operator=(const ChainAVL<T,C>& other) {
+    if (this != &other) {
+        for (size_t i = 0; i < table_size; i++) {
+            delete table[i];
+        }
+        delete[] table;
+
+        table_size = other.table_size;
+        table = new AVLTree<T,C>*[table_size];
+        for (size_t i = 0; i < table_size; i++) {
+            table[i] = new AVLTree<T,C>(*other.table[i]);
+        }
+    }
+    return *this;
 }
 
 template<typename T, typename C>

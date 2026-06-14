@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <algorithm>
 #include <cstdint>
 
 template<typename T, typename C>
@@ -19,6 +20,7 @@ private:
     AVLNode<T,C>* root = nullptr;
 
     void destroy(AVLNode<T,C> *node);
+    AVLNode<T,C>* clone_node(AVLNode<T,C>* node);
     size_t get_height(AVLNode<T,C> *node) const;
     AVLNode<T,C>* rotate_right(AVLNode<T,C> *node);
     AVLNode<T,C>* rotate_left(AVLNode<T,C> *node);
@@ -31,6 +33,8 @@ private:
 
 public:
     AVLTree();
+    AVLTree(const AVLTree& other);
+    AVLTree& operator=(const AVLTree& other);
     ~AVLTree();
 
     void insert(const T& key, C value);
@@ -39,15 +43,23 @@ public:
     void print(void) const;
 };
 
-// manual max implementation
-template <typename T>
-T max(T a, T b) {
-    return (a > b) ? a : b;
-}
-
 template<typename T, typename C>
 AVLTree<T,C>::AVLTree() {
     root = nullptr;
+}
+
+template<typename T, typename C>
+AVLTree<T,C>::AVLTree(const AVLTree<T,C>& other) {
+    root = clone_node(other.root);
+}
+
+template<typename T, typename C>
+AVLTree<T,C>& AVLTree<T,C>::operator=(const AVLTree<T,C>& other) {
+    if (this != &other) {
+        destroy(root);
+        root = clone_node(other.root);
+    }
+    return *this;
 }
 
 template<typename T, typename C>
@@ -74,8 +86,8 @@ AVLNode<T,C>* AVLTree<T,C>::rotate_right(AVLNode<T,C> *node) {
     AVLNode<T,C>* temp = node->left;
     node->left = temp->right;
     temp->right = node;
-    node->height = max(get_height(node->left), get_height(node->right)) + 1;
-    temp->height = max(get_height(temp->left), get_height(temp->right)) + 1;
+    node->height = std::max(get_height(node->left), get_height(node->right)) + 1;
+    temp->height = std::max(get_height(temp->left), get_height(temp->right)) + 1;
     return temp;
 }
 
@@ -84,8 +96,8 @@ AVLNode<T,C>* AVLTree<T,C>::rotate_left(AVLNode<T,C> *node) {
     AVLNode<T,C>* temp = node->right;
     node->right = temp->left;
     temp->left = node;
-    node->height = max(get_height(node->left), get_height(node->right)) + 1;
-    temp->height = max(get_height(temp->left), get_height(temp->right)) + 1;
+    node->height = std::max(get_height(node->left), get_height(node->right)) + 1;
+    temp->height = std::max(get_height(temp->left), get_height(temp->right)) + 1;
     return temp;
 }
 
@@ -96,7 +108,7 @@ int8_t AVLTree<T,C>::balance_factor(AVLNode<T,C>* node) const {
 
 template<typename T, typename C>
 AVLNode<T,C>* AVLTree<T,C>::balance_tree(AVLNode<T,C> *node) {
-    node->height = max(get_height(node->left), get_height(node->right)) + 1;
+    node->height = std::max(get_height(node->left), get_height(node->right)) + 1;
     int8_t balance = balance_factor(node);
 
     if (balance > 1 && balance_factor(node->left) >= 0) {
@@ -193,6 +205,18 @@ AVLNode<T,C>* AVLTree<T,C>::find_node(AVLNode<T,C>* node, const T& key) const {
 template<typename T, typename C>
 AVLNode<T,C>* AVLTree<T,C>::find(const T& key) const {
     return find_node(root, key);
+}
+
+template<typename T, typename C>
+AVLNode<T,C>* AVLTree<T,C>::clone_node(AVLNode<T,C>* node) {
+    if (!node) {
+        return nullptr;
+    }
+    AVLNode<T,C>* copy = new AVLNode<T,C>(node->key, node->value);
+    copy->height = node->height;
+    copy->left = clone_node(node->left);
+    copy->right = clone_node(node->right);
+    return copy;
 }
 
 template<typename T, typename C>
