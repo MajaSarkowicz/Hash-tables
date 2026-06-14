@@ -10,10 +10,11 @@ public:
     DynamicArray();
     DynamicArray(size_t cap);
     DynamicArray(const DynamicArray& other);
+    DynamicArray<T>& operator=(const DynamicArray<T>& other);
     ~DynamicArray();
 
     T *getCollection() { return collection; }
-    size_t &getSize() { return size; }
+    size_t getSize() const { return size; }
     size_t &getCapacity() { return capacity; }
     
     void upsize_();
@@ -62,6 +63,21 @@ DynamicArray<T>::DynamicArray(const DynamicArray& other) : capacity(other.capaci
     for (size_t i = 0; i < size; i++) {
         collection[i] = other.collection[i];
     }
+}
+
+template <typename T>
+DynamicArray<T>& DynamicArray<T>::operator=(const DynamicArray<T>& other)
+{
+    if (this != &other) {
+        delete[] collection;
+        capacity = other.capacity;
+        size = other.size;
+        collection = new T[capacity];
+        for (size_t i = 0; i < size; i++) {
+            collection[i] = other.collection[i];
+        }
+    }
+    return *this;
 }
 
 template <typename T>
@@ -178,8 +194,11 @@ void DynamicArray<T>::resize(size_t new_size)
 template <typename T>
 void DynamicArray<T>::replace(size_t position, T val)
 {
-    if (position < size) {
+    if (position < capacity) {
         collection[position] = val;
+        if (position >= size) {
+            size = position + 1;
+        }
     }
 }
 

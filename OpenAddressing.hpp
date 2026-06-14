@@ -23,7 +23,10 @@ private:
     void resize();
 
 public:
+    OpenAddressing();
     OpenAddressing(size_t initial_capacity);
+    OpenAddressing(const OpenAddressing<T,C>& other);
+    OpenAddressing<T,C>& operator=(const OpenAddressing<T,C>& other);
     ~OpenAddressing();
 
     void insert(const T& key, C value) override;
@@ -31,6 +34,14 @@ public:
     C get(const T& key) const override;
     void print(void) const override;
 };
+
+template<typename T, typename C>
+OpenAddressing<T,C>::OpenAddressing() : capacity(16), size(0) {
+    table = new OpenAddressingNode<T,C>*[capacity];
+    for (size_t i = 0; i < capacity; i++) {
+        table[i] = nullptr;
+    }
+}
 
 template<typename T, typename C>
 OpenAddressing<T,C>::OpenAddressing(size_t initial_capacity)
@@ -42,13 +53,48 @@ OpenAddressing<T,C>::OpenAddressing(size_t initial_capacity)
 }
 
 template<typename T, typename C>
+OpenAddressing<T,C>::OpenAddressing(const OpenAddressing<T,C>& other)
+    : capacity(other.capacity), size(other.size) {
+    table = new OpenAddressingNode<T,C>*[capacity];
+    for (size_t i = 0; i < capacity; i++) {
+        if (other.table[i]) {
+            table[i] = new OpenAddressingNode<T,C>(*other.table[i]);
+        } else {
+            table[i] = nullptr;
+        }
+    }
+}
+
+template<typename T, typename C>
+OpenAddressing<T,C>& OpenAddressing<T,C>::operator=(const OpenAddressing<T,C>& other) {
+    if (this != &other) {
+        destroy();
+        capacity = other.capacity;
+        size = other.size;
+        table = new OpenAddressingNode<T,C>*[capacity];
+        for (size_t i = 0; i < capacity; i++) {
+            if (other.table[i]) {
+                table[i] = new OpenAddressingNode<T,C>(*other.table[i]);
+            } else {
+                table[i] = nullptr;
+            }
+        }
+    }
+    return *this;
+}
+
+template<typename T, typename C>
 void OpenAddressing<T,C>::destroy() {
+    if (!table) {
+        return;
+    }
     for (size_t i = 0; i < capacity; i++) {
         if (table[i] != nullptr) {
             delete table[i];
         }
     }
     delete[] table;
+    table = nullptr;
 }
 
 template<typename T, typename C>
